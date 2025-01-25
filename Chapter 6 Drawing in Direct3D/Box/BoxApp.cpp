@@ -28,7 +28,10 @@ struct ColorPoint
 
 struct ObjectConstants
 {
+    float t;
+    XMFLOAT3 pad;
     XMFLOAT4X4 WorldViewProj = MathHelper::Identity4x4();
+    XMFLOAT4 pulseColor = XMFLOAT4(Colors::Gold);
 };
 
 class BoxApp : public D3DApp
@@ -173,6 +176,8 @@ void BoxApp::Update(const GameTimer& gt)
 	// Update the constant buffer with the latest worldViewProj matrix.
 	ObjectConstants objConstants;
     XMStoreFloat4x4(&objConstants.WorldViewProj, XMMatrixTranspose(worldViewProj));
+    objConstants.t = gt.TotalTime();
+    objConstants.pulseColor = XMFLOAT4(Colors::Gold);
     mObjectCB->CopyData(0, objConstants);
 }
 
