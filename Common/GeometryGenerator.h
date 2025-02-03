@@ -17,6 +17,7 @@
 #include <cstdint>
 #include <DirectXMath.h>
 #include <vector>
+#include <string>
 
 class GeometryGenerator
 {
@@ -110,6 +111,7 @@ public:
 	///</summary>
     MeshData CreateQuad(float x, float y, float w, float h, float depth);
 
+	MeshData FromTxt(const std::string& filename);
 private:
 	void Subdivide(MeshData& meshData);
     Vertex MidPoint(const Vertex& v0, const Vertex& v1);

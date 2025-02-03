@@ -4,6 +4,7 @@
 
 #include "GeometryGenerator.h"
 #include <algorithm>
+#include <fstream>
 
 using namespace DirectX;
 
@@ -654,4 +655,51 @@ GeometryGenerator::MeshData GeometryGenerator::CreateQuad(float x, float y, floa
 	meshData.Indices32[5] = 3;
 
     return meshData;
+}
+
+GeometryGenerator::MeshData GeometryGenerator::FromTxt(const std::string& filename)
+{
+	MeshData meshData;
+	std::ifstream fin(filename);
+
+	if (!fin)
+	{
+		assert(false);
+		return meshData;
+	}
+
+	unsigned int vcount = 0;
+	unsigned int tcount = 0;
+	std::string ignore;
+
+	// 读取顶点数和三角形数
+	fin >> ignore >> vcount;
+	fin >> ignore >> tcount;
+	fin >> ignore >> ignore >> ignore >> ignore;
+
+	// 读取顶点
+	meshData.Vertices.resize(vcount);
+	for (unsigned int i = 0; i < vcount; ++i)
+	{
+		fin >> meshData.Vertices[i].Position.x >> meshData.Vertices[i].Position.y >> meshData.Vertices[i].Position.z;
+		fin >> meshData.Vertices[i].Normal.x >> meshData.Vertices[i].Normal.y >> meshData.Vertices[i].Normal.z;
+	}
+
+	fin >> ignore;
+	fin >> ignore;
+	fin >> ignore;
+	// 读取索引
+	meshData.Indices32.resize(3 * tcount);
+	for (unsigned int i = 0; i < tcount; ++i)
+	{
+		unsigned int k0 = 0, k1 = 0, k2 = 0;
+		fin >> k0 >> k1 >> k2;
+		meshData.Indices32[i * 3 + 0] = k0;
+		meshData.Indices32[i * 3 + 1] = k1;
+		meshData.Indices32[i * 3 + 2] = k2;
+	}
+
+	fin.close();
+
+	return meshData;
 }
