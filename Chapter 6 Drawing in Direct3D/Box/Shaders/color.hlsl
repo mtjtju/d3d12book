@@ -12,6 +12,10 @@ cbuffer cbPerObject : register(b0)
 struct VertexIn
 {
 	float3 PosL  : POSITION;
+};
+
+struct ColorIn
+{
     float4 Color : COLOR;
 };
 
@@ -21,7 +25,7 @@ struct VertexOut
     float4 Color : COLOR;
 };
 
-VertexOut VS(VertexIn vin)
+VertexOut VS(VertexIn vin, ColorIn cin)
 {
 	VertexOut vout;
 	
@@ -29,7 +33,7 @@ VertexOut VS(VertexIn vin)
 	vout.PosH = mul(float4(vin.PosL, 1.0f), gWorldViewProj);
 	
 	// Just pass vertex color into the pixel shader.
-    vout.Color = vin.Color;
+    vout.Color = cin.Color;
     
     return vout;
 }
