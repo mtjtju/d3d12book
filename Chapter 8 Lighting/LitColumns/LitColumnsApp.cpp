@@ -428,12 +428,14 @@ void LitColumnsApp::UpdateMainPassCB(const GameTimer& gt)
 	mMainPassCB.TotalTime = gt.TotalTime();
 	mMainPassCB.DeltaTime = gt.DeltaTime();
 	mMainPassCB.AmbientLight = { 0.25f, 0.25f, 0.35f, 1.0f };
+	/*
 	mMainPassCB.Lights[0].Direction = { 0.57735f, -0.57735f, 0.57735f };
 	mMainPassCB.Lights[0].Strength = { 0.6f, 0.6f, 0.6f };
 	mMainPassCB.Lights[1].Direction = { -0.57735f, -0.57735f, 0.57735f };
 	mMainPassCB.Lights[1].Strength = { 0.3f, 0.3f, 0.3f };
 	mMainPassCB.Lights[2].Direction = { 0.0f, -0.707f, -0.707f };
 	mMainPassCB.Lights[2].Strength = { 0.15f, 0.15f, 0.15f };
+	*/
 
 	auto currPassCB = mCurrFrameResource->PassCB.get();
 	currPassCB->CopyData(0, mMainPassCB);
@@ -805,6 +807,7 @@ void LitColumnsApp::BuildRenderItems()
 	skullRitem->BaseVertexLocation = skullRitem->Geo->DrawArgs["skull"].BaseVertexLocation;
 	mAllRitems.push_back(std::move(skullRitem));
 
+	int lightIndex = 0;
 	XMMATRIX brickTexTransform = XMMatrixScaling(1.0f, 1.0f, 1.0f);
 	UINT objCBIndex = 3;
 	for(int i = 0; i < 5; ++i)
@@ -849,6 +852,17 @@ void LitColumnsApp::BuildRenderItems()
 		leftSphereRitem->IndexCount = leftSphereRitem->Geo->DrawArgs["sphere"].IndexCount;
 		leftSphereRitem->StartIndexLocation = leftSphereRitem->Geo->DrawArgs["sphere"].StartIndexLocation;
 		leftSphereRitem->BaseVertexLocation = leftSphereRitem->Geo->DrawArgs["sphere"].BaseVertexLocation;
+
+		XMFLOAT3 redlight(0.5f, 0.1f, 0.1f);
+		XMFLOAT3 greenLight(0.1f, 0.5f, 0.1f);
+		mMainPassCB.Lights[lightIndex].Position = { -5.0f, 3.5f, -10.0f + i * 5.0f };
+		mMainPassCB.Lights[lightIndex].Strength = i % 2 ? redlight : greenLight;
+		mMainPassCB.Lights[lightIndex].Direction = { 3, -3.5f, 0 };
+		lightIndex++;
+		mMainPassCB.Lights[lightIndex].Position = {+5.0f, 3.5f, -10.0f + i*5.0f};
+		mMainPassCB.Lights[lightIndex].Strength = i % 2 ? greenLight : redlight;
+		mMainPassCB.Lights[lightIndex].Direction = {-3, -3.5f, 0};
+		lightIndex++;
 
 		XMStoreFloat4x4(&rightSphereRitem->World, rightSphereWorld);
 		rightSphereRitem->TexTransform = MathHelper::Identity4x4();
