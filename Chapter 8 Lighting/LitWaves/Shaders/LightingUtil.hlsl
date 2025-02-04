@@ -54,6 +54,7 @@ float3 BlinnPhong(float3 lightStrength, float3 lightVec, float3 normal, float3 t
     // Our spec formula goes outside [0,1] range, but we are 
     // doing LDR rendering.  So scale it down a bit.
     specAlbedo = specAlbedo / (specAlbedo + 1.0f);
+    specAlbedo = floor(specAlbedo * 5.f) / 5.f;
 
     return (mat.DiffuseAlbedo.rgb + specAlbedo) * lightStrength;
 }
@@ -68,6 +69,7 @@ float3 ComputeDirectionalLight(Light L, Material mat, float3 normal, float3 toEy
 
     // Scale light down by Lambert's cosine law.
     float ndotl = max(dot(lightVec, normal), 0.0f);
+    ndotl = floor(ndotl * 20.f) / 20.f;
     float3 lightStrength = L.Strength * ndotl;
 
     return BlinnPhong(lightStrength, lightVec, normal, toEye, mat);
