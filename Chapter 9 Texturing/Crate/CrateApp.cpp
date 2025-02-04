@@ -359,7 +359,14 @@ void CrateApp::UpdateCamera(const GameTimer& gt)
 
 void CrateApp::AnimateMaterials(const GameTimer& gt)
 {
-	
+	XMMATRIX rotZ = XMMatrixRotationZ(gt.TotalTime());
+	XMMATRIX trans = XMMatrixTranslation(-0.5f, -0.5f, 0.0f);
+	XMMATRIX trans_inv = XMMatrixTranslation(0.5f, 0.5f, 0.0f);
+	for (auto& e : mAllRitems)
+	{
+		XMStoreFloat4x4(&e->TexTransform, XMMatrixTranspose(trans * rotZ * trans_inv));
+		e->NumFramesDirty = 1;
+	}
 }
 
 void CrateApp::UpdateObjectCBs(const GameTimer& gt)
@@ -369,14 +376,13 @@ void CrateApp::UpdateObjectCBs(const GameTimer& gt)
 	{
 		// Only update the cbuffer data if the constants have changed.  
 		// This needs to be tracked per frame resource.
-		if(e->NumFramesDirty > 0)
+		if(true || e->NumFramesDirty > 0)
 		{
 			XMMATRIX world = XMLoadFloat4x4(&e->World);
 			XMMATRIX texTransform = XMLoadFloat4x4(&e->TexTransform);
-
 			ObjectConstants objConstants;
 			XMStoreFloat4x4(&objConstants.World, XMMatrixTranspose(world));
-			XMStoreFloat4x4(&objConstants.TexTransform, XMMatrixTranspose(texTransform));
+			XMStoreFloat4x4(&objConstants.TexTransform, texTransform);
 
 			currObjectCB->CopyData(e->ObjCBIndex, objConstants);
 
@@ -449,20 +455,29 @@ void CrateApp::UpdateMainPassCB(const GameTimer& gt)
 
 void CrateApp::LoadTextures()
 {
-	auto woodCrateTex = std::make_unique<Texture>();
-	woodCrateTex->Name = "woodCrateTex";
-	woodCrateTex->Filename = L"../../Textures/1.dds";
+	auto fireCrateTex = std::make_unique<Texture>();
+	fireCrateTex->Name = "fireCrateTex";
+	fireCrateTex->Filename = L"../../Textures/fire.dds";
 	ThrowIfFailed(DirectX::CreateDDSTextureFromFile12(md3dDevice.Get(),
-		mCommandList.Get(), woodCrateTex->Filename.c_str(),
-		woodCrateTex->Resource, woodCrateTex->UploadHeap));
+		mCommandList.Get(), fireCrateTex->Filename.c_str(),
+		fireCrateTex->Resource, fireCrateTex->UploadHeap));
  
-	mTextures[woodCrateTex->Name] = std::move(woodCrateTex);
+	mTextures[fireCrateTex->Name] = std::move(fireCrateTex);
+
+	auto smileCrateTex = std::make_unique<Texture>();
+	smileCrateTex->Name = "smileCrateTex";
+	smileCrateTex->Filename = L"../../Textures/smile.dds";
+	ThrowIfFailed(DirectX::CreateDDSTextureFromFile12(md3dDevice.Get(),
+		mCommandList.Get(), smileCrateTex->Filename.c_str(),
+		smileCrateTex->Resource, smileCrateTex->UploadHeap));
+ 
+	mTextures[smileCrateTex->Name] = std::move(smileCrateTex);
 }
 
 void CrateApp::BuildRootSignature()
 {
 	CD3DX12_DESCRIPTOR_RANGE texTable;
-	texTable.Init(D3D12_DESCRIPTOR_RANGE_TYPE_SRV, 1, 0);
+	texTable.Init(D3D12_DESCRIPTOR_RANGE_TYPE_SRV, 2, 0); // registor number: t0, t1...
 
     // Root parameter can be a table, root descriptor or root constants.
     CD3DX12_ROOT_PARAMETER slotRootParameter[4];
@@ -505,7 +520,7 @@ void CrateApp::BuildDescriptorHeaps()
 	// Create the SRV heap.
 	//
 	D3D12_DESCRIPTOR_HEAP_DESC srvHeapDesc = {};
-	srvHeapDesc.NumDescriptors = 1;
+	srvHeapDesc.NumDescriptors = 2;
 	srvHeapDesc.Type = D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV;
 	srvHeapDesc.Flags = D3D12_DESCRIPTOR_HEAP_FLAG_SHADER_VISIBLE;
 	ThrowIfFailed(md3dDevice->CreateDescriptorHeap(&srvHeapDesc, IID_PPV_ARGS(&mSrvDescriptorHeap)));
@@ -515,17 +530,29 @@ void CrateApp::BuildDescriptorHeaps()
 	//
 	CD3DX12_CPU_DESCRIPTOR_HANDLE hDescriptor(mSrvDescriptorHeap->GetCPUDescriptorHandleForHeapStart());
 
-	auto woodCrateTex = mTextures["woodCrateTex"]->Resource;
+	auto smileCrateTex = mTextures["smileCrateTex"]->Resource;
  
 	D3D12_SHADER_RESOURCE_VIEW_DESC srvDesc = {};
 	srvDesc.Shader4ComponentMapping = D3D12_DEFAULT_SHADER_4_COMPONENT_MAPPING;
-	srvDesc.Format = woodCrateTex->GetDesc().Format;
+	srvDesc.Format = smileCrateTex->GetDesc().Format;
 	srvDesc.ViewDimension = D3D12_SRV_DIMENSION_TEXTURE2D;
 	srvDesc.Texture2D.MostDetailedMip = 0;
-	srvDesc.Texture2D.MipLevels = woodCrateTex->GetDesc().MipLevels;
+	srvDesc.Texture2D.MipLevels = smileCrateTex->GetDesc().MipLevels;
 	srvDesc.Texture2D.ResourceMinLODClamp = 0.0f;
 
-	md3dDevice->CreateShaderResourceView(woodCrateTex.Get(), &srvDesc, hDescriptor);
+	md3dDevice->CreateShaderResourceView(smileCrateTex.Get(), &srvDesc, hDescriptor);
+
+	auto fireCrateTex = mTextures["fireCrateTex"]->Resource;
+ 
+	srvDesc.Shader4ComponentMapping = D3D12_DEFAULT_SHADER_4_COMPONENT_MAPPING;
+	srvDesc.Format = fireCrateTex->GetDesc().Format;
+	srvDesc.ViewDimension = D3D12_SRV_DIMENSION_TEXTURE2D;
+	srvDesc.Texture2D.MostDetailedMip = 0;
+	srvDesc.Texture2D.MipLevels = fireCrateTex->GetDesc().MipLevels;
+	srvDesc.Texture2D.ResourceMinLODClamp = 0.0f;
+
+	hDescriptor.Offset(1, mCbvSrvDescriptorSize);
+	md3dDevice->CreateShaderResourceView(fireCrateTex.Get(), &srvDesc, hDescriptor);
 }
 
 void CrateApp::BuildShadersAndInputLayout()
@@ -686,7 +713,7 @@ void CrateApp::DrawRenderItems(ID3D12GraphicsCommandList* cmdList, const std::ve
         D3D12_GPU_VIRTUAL_ADDRESS objCBAddress = objectCB->GetGPUVirtualAddress() + ri->ObjCBIndex*objCBByteSize;
 		D3D12_GPU_VIRTUAL_ADDRESS matCBAddress = matCB->GetGPUVirtualAddress() + ri->Mat->MatCBIndex*matCBByteSize;
 
-		cmdList->SetGraphicsRootDescriptorTable(0, tex);
+		cmdList->SetGraphicsRootDescriptorTable(0, tex); // rootparamindex: means tex is set to rootparameters[0], which is a table
         cmdList->SetGraphicsRootConstantBufferView(1, objCBAddress);
         cmdList->SetGraphicsRootConstantBufferView(3, matCBAddress);
 
