@@ -152,6 +152,7 @@ float4 PS(VertexOut pin) : SV_Target
     // Common convention to take alpha from diffuse albedo.
     litColor.a = diffuseAlbedo.a;
 
+    litColor = float4(0.1, 0.1, 0.1, 1);
     return litColor;
 }
 
