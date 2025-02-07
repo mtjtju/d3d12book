@@ -123,7 +123,7 @@ private:
 	// Render items divided by PSO.
 	std::vector<RenderItem*> mRitemLayer[(int)RenderLayer::Count];
 
-	const int NumDataElements = 32;
+	const int NumDataElements = 64;
 
 	ComPtr<ID3D12Resource> mInputBufferA = nullptr;
 	ComPtr<ID3D12Resource> mInputUploadBufferA = nullptr;
